@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Salon Irina Light Theme - Refined Contrast */
+    --background: 335 30% 96%;
+    /* Very light pink background foundation */
+    --foreground: 240 10% 3.9%;
+    /* Dark Gray */
+
+    /* RAL 3014 Antique Pink approx #CB8FA9 */
+    --ral-3014: #CB8FA9;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 335 78% 42%;
+    /* Elegant Rose #be185d - keeps good contrast */
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 335 29% 95%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 240 4.8% 90%;
+    --muted-foreground: 240 3.8% 40%;
+
+    /* ... keep other vars ... */
+
+    --radius: 0.75rem;
+
+    /* Custom Variables */
+    --tg-theme-bg-color: #CB8FA9;
+    /* RAL 3014 Main Background */
+    --tg-theme-text-color: #111827;
+
+    --gradient-primary: linear-gradient(135deg, #be185d 0%, #db2777 100%);
+  }
+
+  body {
+    background-color: var(--tg-theme-bg-color);
+    color: var(--tg-theme-text-color);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+
+  /* Renamed glass-card to be light-friendly "soft-card" */
+  .glass-card {
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border-radius: var(--radius);
+  }
+
+  .text-gradient {
+    /* For light theme, we often want solid graceful color, or subtle gradient */
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .btn-gradient {
+    background: var(--gradient-primary);
+    border: none;
+    color: white;
+    box-shadow: 0 4px 10px rgba(190, 24, 93, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .btn-gradient:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 5px rgba(190, 24, 93, 0.2);
+  }
+
+  /* Calendar Overrides */
+  .rdp {
+    margin: 0 auto !important;
+    --rdp-cell-size: 44px !important;
+    /* Slightly larger cells */
+    color: #111827 !important;
+    /* Almost black */
+  }
+
+  .rdp-months {
+    justify-content: center !important;
+  }
+
+  .rdp-caption_label {
+    color: #111827 !important;
+    font-size: 1.1rem !important;
+    /* Larger month title */
+    font-weight: 800 !important;
+    /* Extra bold */
+    text-transform: capitalize;
+  }
+
+  .rdp-head_cell {
+    color: #4b5563 !important;
+    /* Gray-600 */
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    text-transform: uppercase;
+  }
+
+  .rdp-day {
+    font-size: 1rem !important;
+    font-weight: 600 !important;
+    /* Semi-bold numbers */
+    color: #1f2937 !important;
+    /* Gray-800 */
+  }
+
+  .rdp-day_selected {
+    background: var(--gradient-primary) !important;
+    color: white !important;
+    font-weight: 800 !important;
+    /* Extra bold selected */
+    box-shadow: 0 4px 12px rgba(190, 24, 93, 0.4);
+    /* Add shadow to selected */
+    border-radius: 50%;
+  }
+
+  .rdp-day:hover:not(.rdp-day_selected) {
+    background: var(--secondary) !important;
+    border-radius: 50%;
+    color: #be185d !important;
+    /* Pink text on hover */
+    font-weight: bold !important;
+  }
+
+  .rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
+    color: #be185d !important;
+    background-color: #fce7f3 !important;
+  }
+}
