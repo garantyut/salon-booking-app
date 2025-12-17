@@ -4,8 +4,7 @@ dist
 .gemini
 .vs
 .vscode
-Dockerfile
-nginx.conf
+
 README.md
 task.md
 deployment.md
