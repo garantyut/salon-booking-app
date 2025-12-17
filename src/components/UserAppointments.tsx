@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { useBookingStore } from '@/store/bookingStore';
-import { getUserAppointments, MOCK_SERVICES, MOCK_MASTERS } from '@/services/mockData';
+import { getUserAppointments, MOCK_SERVICES } from '@/services/mockData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Clock, Scissors, Pencil, Trash2, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
+
 import {
     Dialog,
     DialogContent,

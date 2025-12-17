@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useBookingStore } from '@/store/bookingStore';
+
 import { getMasters, MOCK_MASTERS } from '@/services/mockData'; // In real app, update via API
 import { Master, WorkingHours } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch'; // Assuming we have switch or need to use checkbox
-import { Checkbox } from '@/components/ui/checkbox';
+
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar } from '@/components/ui/calendar';
-import { format } from 'date-fns';
-import { ru } from 'date-fns/locale';
+
 import { Save } from 'lucide-react';
 
 const DAYS_OF_WEEK = [

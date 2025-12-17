@@ -4,7 +4,7 @@ import { AdminSchedule } from './AdminSchedule';
 import { AdminScheduleSettings } from './AdminScheduleSettings';
 import { Calendar, Users, List, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useBookingStore } from '@/store/bookingStore';
+
 
 interface AdminDashboardProps {
     onLogout: () => void;
