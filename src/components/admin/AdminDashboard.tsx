@@ -4,6 +4,9 @@ import { AdminSchedule } from './AdminSchedule';
 import { AdminScheduleSettings } from './AdminScheduleSettings';
 import { Calendar, Users, List, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useEffect } from 'react';
+import { useBookingStore } from '@/store/bookingStore';
+import { getProAppointments } from '@/services/firebaseService';
 
 
 interface AdminDashboardProps {
@@ -14,6 +17,11 @@ type AdminTab = 'schedule' | 'services' | 'clients' | 'settings';
 
 export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
     const [activeTab, setActiveTab] = useState<AdminTab>('schedule');
+    const { setAppointments } = useBookingStore();
+
+    useEffect(() => {
+        getProAppointments().then(setAppointments);
+    }, [setAppointments]);
 
     return (
         <div className="h-full flex flex-col relative bg-sky-100">

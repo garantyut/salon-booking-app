@@ -53,7 +53,7 @@ export const useBookingStore = create<BookingState>((set, get) => ({
     selectedTimeSlot: null,
     appointments: [],
     reschedulingId: null,
-    services: [], // Initial empty, loaded from mock
+    services: [], // Initial empty, loaded from firebase
 
     setServices: (services) => set({ services }),
 

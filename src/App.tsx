@@ -40,6 +40,8 @@ function App() {
 
     // Initial Data Load
     useEffect(() => {
+        WebApp.expand(); // Force full screen on iOS
+
         // Load services into store if empty (so Admin has something to edit)
         if (services.length === 0) {
             getServices().then(setServices);
@@ -78,7 +80,7 @@ function App() {
         try {
             if (reschedulingId) {
                 if (!selectedDate || !selectedTimeSlot) return;
-                // TODO: Implement mock rescheduling backend logic if needed
+                // TODO: Implement real rescheduling backend logic
                 rescheduleAppointment(reschedulingId, selectedDate, selectedTimeSlot);
                 setStep(Step.SUCCESS);
                 return;
@@ -86,11 +88,15 @@ function App() {
 
             if (cart.length === 0 || !selectedDate || !selectedTimeSlot) return;
 
+            // Get Real User ID from Telegram
+            const tgUser = WebApp.initDataUnsafe?.user;
+            const clientId = tgUser ? tgUser.id.toString() : 'user-guest-' + Math.random().toString(36).substr(2, 5);
+
             // Create appointments from cart
             const newAppointments: import('@/types').Appointment[] = cart.map(item => ({
-                id: Math.random().toString(36).substr(2, 9),
-                clientId: 'user-1', // Default mock user
-                masterId: item.master ? item.master.id : 'master-1', // Default to first master if none
+                id: '', // Will be set by Firestore
+                clientId: clientId,
+                masterId: item.master ? item.master.id : 'master-1',
                 serviceId: item.service.id,
                 date: selectedDate.toISOString(),
                 timeSlot: selectedTimeSlot,
@@ -98,17 +104,21 @@ function App() {
                 createdAt: Date.now()
             }));
 
-            // Persist to Mock Backend
-            const { addAppointmentMock } = await import('@/services/mockData');
+            // Persist to Real Backend (Firestore)
+            const { addAppointment } = await import('@/services/firebaseService');
+
+            const savedAppointments: import('@/types').Appointment[] = [];
             for (const app of newAppointments) {
-                await addAppointmentMock(app);
+                // Remove empty ID before sending, Firestore generates it
+                const { id, ...appData } = app;
+                const newId = await addAppointment(appData);
+                savedAppointments.push({ ...app, id: newId });
             }
 
             // Update local store immediately (optimistic UI) keeping previous history
             useBookingStore.setState(state => ({
-                appointments: [...state.appointments, ...newAppointments],
+                appointments: [...state.appointments, ...savedAppointments],
                 cart: [], // Clear cart after booking
-                // Keep date/time for success screen context if needed, or clear it
             }));
 
             setStep(Step.SUCCESS);
