@@ -117,7 +117,11 @@ export const BookingCalendar = () => {
                     mode="single"
                     selected={selectedDate}
                     onSelect={setDate}
-                    disabled={(date: Date) => date < new Date() || isDayOff(date)} // Disable past dates and days off
+                    disabled={(date: Date) => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return date < today || isDayOff(date);
+                    }}
                     initialFocus
                     locale={ru}
                     className="rounded-2xl border-none bg-white shadow-xl shadow-gray-200 p-4 w-full max-w-[320px]"

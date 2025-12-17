@@ -125,6 +125,8 @@ function App() {
             WebApp.MainButton.hide();
         } catch (error) {
             console.error("Booking failed", error);
+            // @ts-ignore
+            import("sonner").then(({ toast }) => toast.error(`Ошибка записи: ${error.message || "Неизвестная ошибка"}`));
         } finally {
             isBookingRef.current = false;
             setIsBookingState(false);
