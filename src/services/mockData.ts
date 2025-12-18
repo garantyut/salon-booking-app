@@ -94,23 +94,19 @@ export const MOCK_USERS: User[] = [
 // Mutable in-memory storage for the session
 let services = [...MOCK_SERVICES];
 let masters = [...MOCK_MASTERS];
-let appointments: Appointment[] = [
-    // Keep one past appointment for history demonstration, clear upcoming
-    {
-        id: 'app-past-1',
-        clientId: 'user-1',
-        masterId: 'master-1',
-        serviceId: 'w1',
-        date: '2025-10-15', // Past
-        timeSlot: '14:30',
-        status: 'confirmed',
-        createdAt: Date.now() - 10000000
-    }
-];
+let appointments: Appointment[] = []; // Empty - no fake data
 let users = [...MOCK_USERS];
 
-export const getServices = async (): Promise<Service[]> => {
-    return new Promise((resolve) => setTimeout(() => resolve(services), 300));
+export const getServices = async (salonId?: string): Promise<Service[]> => {
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            if (salonId === 'barber007') {
+                resolve(services.filter(s => s.category === 'mens'));
+            } else {
+                resolve(services);
+            }
+        }, 300);
+    });
 };
 
 export const getMasters = async (): Promise<Master[]> => {

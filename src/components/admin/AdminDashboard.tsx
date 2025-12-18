@@ -1,13 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AdminServices } from './AdminServices';
 import { AdminSchedule } from './AdminSchedule';
 import { AdminScheduleSettings } from './AdminScheduleSettings';
 import { Calendar, Users, List, Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useEffect } from 'react';
 import { useBookingStore } from '@/store/bookingStore';
 import { getProAppointments } from '@/services/firebaseService';
-
+import { useSalon } from '@/contexts/SalonContext';
 
 interface AdminDashboardProps {
     onLogout: () => void;
@@ -18,6 +17,7 @@ type AdminTab = 'schedule' | 'services' | 'clients' | 'settings';
 export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
     const [activeTab, setActiveTab] = useState<AdminTab>('schedule');
     const { setAppointments } = useBookingStore();
+    const { config } = useSalon();
 
     useEffect(() => {
         getProAppointments().then(setAppointments);
@@ -28,7 +28,7 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
             {/* Header */}
             <div className="bg-white border-b border-gray-200 p-6 sticky top-0 z-10 flex justify-between items-center shadow-sm">
                 <div>
-                    <h1 className="text-lg font-bold text-gray-900">Кабинет Мастера</h1>
+                    <h1 className="text-lg font-bold text-gray-900">{config?.texts.admin_title || 'Кабинет Мастера'}</h1>
                     <div className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
                         <p className="text-xs text-gray-500">Online</p>

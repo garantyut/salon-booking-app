@@ -1,7 +1,8 @@
 import { useBookingStore } from '@/store/bookingStore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, Plus, Clock } from 'lucide-react';
+import { X, Plus, Clock, Tag } from 'lucide-react';
+import { useSalon } from '@/contexts/SalonContext';
 
 interface CartSummaryProps {
     onAddMore: () => void;
@@ -10,6 +11,7 @@ interface CartSummaryProps {
 
 export const CartSummary = ({ onAddMore, onProceed }: CartSummaryProps) => {
     const { cart, removeFromCart, getTotalPrice, getTotalDuration } = useBookingStore();
+    const { config } = useSalon();
 
     if (cart.length === 0) {
         return (
@@ -83,6 +85,22 @@ export const CartSummary = ({ onAddMore, onProceed }: CartSummaryProps) => {
                 </CardContent>
             </Card>
 
+            {
+                config?.features.promo_codes && (
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            placeholder="Промокод"
+                            className="flex-1 px-3 py-2 rounded-md border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                        />
+                        <Button variant="outline" size="sm" className="text-pink-600 border-pink-200 hover:bg-pink-50">
+                            <Tag className="w-4 h-4 mr-1" />
+                            Применить
+                        </Button>
+                    </div>
+                )
+            }
+
             <div className="flex gap-3 pt-4">
                 <Button
                     variant="outline"
@@ -99,6 +117,6 @@ export const CartSummary = ({ onAddMore, onProceed }: CartSummaryProps) => {
                     Выбрать время
                 </Button>
             </div>
-        </div>
+        </div >
     );
 };

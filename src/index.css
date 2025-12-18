@@ -119,12 +119,11 @@
   }
 
   .rdp-day_selected {
-    background: var(--gradient-primary) !important;
+    background-color: #22c55e !important;
+    /* Green-500 */
     color: white !important;
     font-weight: 800 !important;
-    /* Extra bold selected */
-    box-shadow: 0 4px 12px rgba(190, 24, 93, 0.4);
-    /* Add shadow to selected */
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
     border-radius: 50%;
   }
 
@@ -139,5 +138,24 @@
   .rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
     color: #be185d !important;
     background-color: #fce7f3 !important;
+  }
+
+  /* Fully Booked State */
+  .rdp-day.bg-red-500 {
+    background-color: #ef4444 !important;
+    /* Tailwind Red-500 */
+    color: white !important;
+    opacity: 1 !important;
+  }
+
+  .rdp-day.bg-red-500:hover {
+    background-color: #dc2626 !important;
+    /* Red-600 */
+  }
+
+  /* Selected must win over fully booked if user selects it (though usually one wouldn't select a fully booked day, but just in case) */
+  .rdp-day_selected.bg-red-500 {
+    background-color: #22c55e !important;
+    /* Switch to green if it became selected somehow */
   }
 }

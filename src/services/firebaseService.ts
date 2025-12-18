@@ -65,3 +65,21 @@ export const saveUser = async (user: User): Promise<void> => {
     // Simplified for MVP: Check existence not implemented here, assumed handled upstream or simple 'add'
     // To keep it simple: We won't strictly "auth" users yet, just trusting the Telegram ID passed in Appointment
 };
+
+// Config
+export const getAdminTelegramIds = async (): Promise<string[]> => {
+    try {
+        const configRef = doc(db, 'config', 'settings');
+        const docSnap = await getDocs(query(collection(db, 'config')));
+        // Try to get from settings document
+        const settingsDoc = docSnap.docs.find(d => d.id === 'settings');
+        if (settingsDoc) {
+            const data = settingsDoc.data();
+            return data.adminTelegramIds || [];
+        }
+        return [];
+    } catch (error) {
+        console.error("Failed to fetch admin IDs", error);
+        return [];
+    }
+};

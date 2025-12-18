@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useSalon } from '@/contexts/SalonContext';
 import { useBookingStore } from '@/store/bookingStore';
 import { getUserAppointments, MOCK_SERVICES } from '@/services/mockData';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,6 +25,7 @@ interface UserAppointmentsProps {
 
 export const UserAppointments = ({ onReschedule }: UserAppointmentsProps) => {
     const { appointments, setAppointments, cancelAppointment, startRescheduling } = useBookingStore();
+    const { config } = useSalon();
 
     useEffect(() => {
         // Only load if empty to preserve local edits during session
@@ -165,6 +167,14 @@ export const UserAppointments = ({ onReschedule }: UserAppointmentsProps) => {
                                                     <AlertCircle className="w-3 h-3 mt-0.5 text-pink-500" />
                                                     <span className="italic">{app.notes}</span>
                                                 </div>
+                                            </div>
+                                        )}
+
+                                        {config?.features.reviews && (
+                                            <div className="mt-2 pt-2 border-t border-gray-100 text-center">
+                                                <Button variant="link" className="text-xs h-auto p-0 text-pink-500">
+                                                    Оставить отзыв
+                                                </Button>
                                             </div>
                                         )}
                                     </CardContent>
