@@ -36,15 +36,23 @@ export const UserOnboarding = ({ userId, onComplete }: UserOnboardingProps) => {
 
         setLoading(true);
         try {
+            // Build profile without undefined values (Firestore rejects undefined)
+            const telegramUser = WebApp.initDataUnsafe?.user;
             const profile: UserProfile = {
                 id: userId,
                 firstName: firstName.trim(),
-                lastName: lastName.trim(),
+                lastName: lastName.trim() || '',
                 phone: phone.trim(),
                 createdAt: Date.now(),
-                telegramId: WebApp.initDataUnsafe?.user?.id || (import.meta.env.DEV ? 123456789 : undefined),
-                username: WebApp.initDataUnsafe?.user?.username || (import.meta.env.DEV ? 'test_user' : undefined)
             };
+
+            // Only add optional fields if they have values
+            if (telegramUser?.id) {
+                profile.telegramId = telegramUser.id;
+            }
+            if (telegramUser?.username) {
+                profile.username = telegramUser.username;
+            }
 
             // Allow parent to handle saving (to keep logic clean)
             await onComplete(profile);
