@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import WebApp from '@twa-dev/sdk';
+import { init as initTelegramSDK, viewport, miniApp, backButton } from '@telegram-apps/sdk';
 import { useBookingStore } from '@/store/bookingStore';
 import { getServices } from '@/services/mockData';
 import { getAdminTelegramIds, getUserProfile, saveUserProfile } from '@/services/firebaseService';
@@ -102,19 +103,37 @@ function InnerApp() {
             // Telegram Config
             try {
                 if (tgUser) {
+                    // Initialize new SDK
+                    try {
+                        initTelegramSDK();
+
+                        // Mount and expand viewport
+                        if (viewport.mount.isAvailable()) {
+                            await viewport.mount();
+                        }
+                        if (viewport.expand.isAvailable()) {
+                            viewport.expand();
+                        }
+
+                        // Request fullscreen for immersive experience
+                        if (viewport.requestFullscreen.isAvailable()) {
+                            await viewport.requestFullscreen();
+                        }
+
+                        // Mount mini app
+                        if (miniApp.mount.isAvailable()) {
+                            await miniApp.mount();
+                        }
+                    } catch (sdkErr) {
+                        console.warn('New SDK initialization failed, falling back to legacy', sdkErr);
+                    }
+
+                    // Legacy fallback
                     WebApp.expand();
                     WebApp.ready();
                     if (WebApp.isVersionAtLeast('6.1')) {
                         WebApp.setHeaderColor('#ffffff');
                         WebApp.setBackgroundColor('#ffffff');
-                    }
-                    if (WebApp.isVersionAtLeast('7.7')) {
-                        WebApp.disableVerticalSwipes();
-                        // @ts-ignore - requestFullscreen is experimental API
-                        if (WebApp.requestFullscreen) {
-                            // @ts-ignore
-                            WebApp.requestFullscreen();
-                        }
                     }
                 }
             } catch (e) {
