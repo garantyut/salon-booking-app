@@ -28,7 +28,7 @@ export const AdminClients = () => {
     }, [setUsers]);
 
     const filteredUsers = users.filter(user => {
-        const fullSearch = (user.firstName + ' ' + user.lastName + ' ' + user.phone).toLowerCase();
+        const fullSearch = ((user.firstName || '') + ' ' + (user.lastName || '') + ' ' + (user.phone || '')).toLowerCase();
         return fullSearch.includes(searchTerm.toLowerCase());
     });
 
@@ -59,7 +59,7 @@ export const AdminClients = () => {
                             <CardContent className="p-4 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center text-pink-600 font-bold shrink-0">
-                                        {user.firstName[0]}
+                                        {user.firstName?.[0] || '?'}
                                     </div>
                                     <div>
                                         <h3 className="font-semibold text-gray-900">{user.firstName} {user.lastName}</h3>

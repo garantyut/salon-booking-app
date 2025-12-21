@@ -12,12 +12,14 @@ export interface Master {
     name: string;
     photoUrl: string;
     specializations: string[]; // Service IDs
-    workingHours: {
-        [key: number]: { // 0 = Sunday, 1 = Monday...
-            start: string;
-            end: string;
-            isDayOff: boolean;
-        };
+    workingHours: WorkingHours;
+}
+
+export interface WorkingHours {
+    [key: number]: { // 0 = Sunday, 1 = Monday...
+        start: string;
+        end: string;
+        isDayOff: boolean;
     };
 }
 

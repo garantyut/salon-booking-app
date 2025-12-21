@@ -206,7 +206,7 @@ export const ManualBookingForm = ({ onSuccess }: ManualBookingFormProps) => {
                                         } else {
                                             const user = users.find(u => u.id === val);
                                             if (user) {
-                                                setClientName(user.name || (user as any).firstName || '');
+                                                setClientName(user.firstName || '');
                                                 setClientSurname((user as any).lastName || '');
                                                 setClientPhone(user.phone || '+7 ');
                                             }
@@ -220,10 +220,10 @@ export const ManualBookingForm = ({ onSuccess }: ManualBookingFormProps) => {
                                         <SelectItem value="new" className="font-medium text-pink-600 border-b pb-2 mb-2">
                                             + Новый клиент
                                         </SelectItem>
-                                        {users.filter(u => u.name || (u as any).firstName || u.phone).map(u => (
+                                        {users.filter(u => u.firstName || u.phone).map(u => (
                                             <SelectItem key={u.id} value={u.id}>
                                                 {/* Display Name + Surname + Phone */}
-                                                <span className="font-medium">{u.name || (u as any).firstName} {(u as any).lastName || ''}</span>
+                                                <span className="font-medium">{u.firstName} {u.lastName || ''}</span>
                                                 <span className="text-gray-400 text-xs ml-2">{u.phone}</span>
                                             </SelectItem>
                                         ))}

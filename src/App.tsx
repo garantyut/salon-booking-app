@@ -110,6 +110,7 @@ function InnerApp() {
                     }
                     if (WebApp.isVersionAtLeast('7.7')) {
                         WebApp.disableVerticalSwipes();
+                        // @ts-ignore - requestFullscreen is experimental API
                         if (WebApp.requestFullscreen) {
                             // @ts-ignore
                             WebApp.requestFullscreen();

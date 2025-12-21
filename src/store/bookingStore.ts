@@ -44,8 +44,8 @@ interface BookingState {
     getTotalDuration: () => number;
     getTotalPrice: () => number;
 
-    users: import('@/types').User[];
-    setUsers: (users: import('@/types').User[]) => void;
+    users: import('@/types').UserProfile[];
+    setUsers: (users: import('@/types').UserProfile[]) => void;
 }
 
 export const useBookingStore = create<BookingState>((set, get) => ({

@@ -48,7 +48,8 @@ export const MOCK_APPOINTMENTS: Appointment[] = [
         date: '2025-12-20', // Upcoming
         timeSlot: '14:30',
         status: 'confirmed',
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        price: 2500
     },
     {
         id: 'app-2',
@@ -59,7 +60,8 @@ export const MOCK_APPOINTMENTS: Appointment[] = [
         timeSlot: '10:00',
         status: 'confirmed',
         notes: 'Wella Koleston 7/7 + 6% окислитель. Клиент доволен, в следующий раз можно пробовать 7/73.',
-        createdAt: Date.now() - 10000000
+        createdAt: Date.now() - 10000000,
+        price: 4000
     },
     {
         id: 'app-3',
@@ -69,7 +71,8 @@ export const MOCK_APPOINTMENTS: Appointment[] = [
         date: '2025-10-01', // Past
         timeSlot: '18:00',
         status: 'confirmed',
-        createdAt: Date.now() - 20000000
+        createdAt: Date.now() - 20000000,
+        price: 2000
     }
 ];
 
