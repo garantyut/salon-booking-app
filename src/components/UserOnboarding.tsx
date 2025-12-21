@@ -49,9 +49,10 @@ export const UserOnboarding = ({ userId, onComplete }: UserOnboardingProps) => {
             // Allow parent to handle saving (to keep logic clean)
             await onComplete(profile);
 
-        } catch (err) {
-            console.error(err);
-            setError('Ошибка сохранения. Попробуйте снова.');
+        } catch (err: any) {
+            console.error('Onboarding save error:', err);
+            const errorMessage = err?.message || err?.code || 'Неизвестная ошибка';
+            setError(`Ошибка сохранения: ${errorMessage}. Попробуйте снова.`);
         } finally {
             setLoading(false);
         }
