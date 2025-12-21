@@ -80,7 +80,7 @@ export const CartSummary = ({ onAddMore, onProceed }: CartSummaryProps) => {
                     </div>
                     <div className="text-right">
                         <div className="text-xs uppercase font-bold text-gray-400 tracking-wider">Итого сумма</div>
-                        <div className="font-black text-2xl text-blue-600">{getTotalPrice()} ₽</div>
+                        <div className="font-black text-2xl text-green-600">{getTotalPrice()} ₽</div>
                     </div>
                 </CardContent>
             </Card>

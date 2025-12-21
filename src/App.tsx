@@ -2,17 +2,29 @@ import { useEffect, useState, useRef } from 'react';
 import WebApp from '@twa-dev/sdk';
 import { useBookingStore } from '@/store/bookingStore';
 import { getServices } from '@/services/mockData';
-import { getAdminTelegramIds } from '@/services/firebaseService';
+import { getAdminTelegramIds, getUserProfile, saveUserProfile } from '@/services/firebaseService';
 import { ServiceList } from '@/components/ServiceList';
 import { MasterList } from '@/components/MasterList';
 import { BookingCalendar } from '@/components/BookingCalendar';
 import { CartSummary } from '@/components/CartSummary';
 import { UserAppointments } from '@/components/UserAppointments';
+import { UserOnboarding } from '@/components/UserOnboarding';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { SalonProvider, useSalon } from '@/contexts/SalonContext';
 import { Sparkles, Send } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogClose
+} from "@/components/ui/dialog";
+
+import { DevTools } from '@/components/dev/DevTools';
 
 enum Step {
     SELECT_SERVICE = 0,
@@ -39,11 +51,15 @@ function InnerApp() {
     const [step, setStep] = useState<Step>(Step.SELECT_SERVICE);
     const [draftService, setDraftService] = useState<import('@/types').Service | null>(null);
     const [isBookingState, setIsBookingState] = useState(false);
+    const [showCloseConfirm, setShowCloseConfirm] = useState(false);
     const isBookingRef = useRef(false);
 
     // Role-based access control
+    // Role-based access control
     const [userRole, setUserRole] = useState<UserRole>('loading');
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [userProfile, setUserProfile] = useState<import('@/types').UserProfile | null>(null);
+    const [customerNote, setCustomerNote] = useState(''); // New state
     const { loading: configLoading, config } = useSalon();
 
     // Initial Data Load & Role Detection
@@ -67,18 +83,47 @@ function InnerApp() {
                 return;
             }
 
-            if (!tgUser || !tgUser.id) {
-                setUserRole('not_telegram');
-                return;
+            const userId = tgUser ? tgUser.id.toString() : (localStorage.getItem('salon_guest_id') || 'guest-' + Math.random().toString(36).substr(2, 9));
+
+            if (!tgUser) {
+                if (!localStorage.getItem('salon_guest_id')) {
+                    localStorage.setItem('salon_guest_id', userId);
+                }
+                // Guest flow
+                console.log("No Telegram user found, defaulting to Guest Client");
             }
 
-            WebApp.expand(); // Force full screen on iOS
-            setCurrentUserId(tgUser.id.toString());
+            setCurrentUserId(userId);
+
+            // Fetch User Profile
+            const profile = await getUserProfile(userId);
+            setUserProfile(profile);
+
+            // Telegram Config
+            try {
+                if (tgUser) {
+                    WebApp.expand();
+                    WebApp.ready();
+                    if (WebApp.isVersionAtLeast('6.1')) {
+                        WebApp.setHeaderColor('#ffffff');
+                        WebApp.setBackgroundColor('#ffffff');
+                    }
+                    if (WebApp.isVersionAtLeast('7.7')) {
+                        WebApp.disableVerticalSwipes();
+                        if (WebApp.requestFullscreen) {
+                            // @ts-ignore
+                            WebApp.requestFullscreen();
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("WebApp configuration failed", e);
+            }
 
             // Load admin IDs from Firebase
             const adminIds = await getAdminTelegramIds();
 
-            if (adminIds.includes(tgUser.id.toString())) {
+            if (adminIds.includes(userId)) {
                 setUserRole('admin');
             } else {
                 setUserRole('client');
@@ -90,8 +135,15 @@ function InnerApp() {
 
     // Load services when config is available
     useEffect(() => {
-        if (services.length === 0 && config?.salon_id) {
-            getServices(config.salon_id).then(setServices);
+        console.log("App: Checking services load triggers", { servicesLen: services.length, salonId: config?.salon_id });
+
+        if (services.length === 0) {
+            const salonIdToLoad = config?.salon_id || 'irina';
+            console.log("App: Loading services for", salonIdToLoad);
+            getServices(salonIdToLoad).then(data => {
+                console.log("App: Services loaded:", data);
+                setServices(data);
+            }).catch(err => console.error("App: Service load failed", err));
         }
     }, [services.length, setServices, config]);
 
@@ -102,6 +154,7 @@ function InnerApp() {
         else if (step === Step.SELECT_MASTER) setStep(Step.SELECT_SERVICE);
         else if (step === Step.SUCCESS) {
             reset();
+            setCustomerNote('');
             setStep(Step.SELECT_SERVICE);
         }
     };
@@ -132,9 +185,8 @@ function InnerApp() {
 
             if (cart.length === 0 || !selectedDate || !selectedTimeSlot) return;
 
-            // Get Real User ID from Telegram
-            const tgUser = WebApp.initDataUnsafe?.user;
-            const clientId = tgUser ? tgUser.id.toString() : 'user-guest-' + Math.random().toString(36).substr(2, 5);
+            // Use the persistent currentUserId
+            const clientId = currentUserId || (WebApp.initDataUnsafe?.user?.id.toString()) || 'unknown-user';
 
             // Create appointments from cart
             // Helper to add minutes to "HH:mm"
@@ -157,7 +209,9 @@ function InnerApp() {
                     date: selectedDate.toISOString(),
                     timeSlot: currentStartTime,
                     status: 'confirmed' as const,
-                    createdAt: Date.now()
+                    createdAt: Date.now(),
+                    price: item.service.price,
+                    notes: customerNote
                 };
 
                 // Update start time for the NEXT appointment
@@ -166,31 +220,16 @@ function InnerApp() {
                 return appointment;
             });
 
-            // Persist to Real Backend (Firestore)
+            // Persist to Real Backend (or LocalStorage in Dev via service)
             const { addAppointment } = await import('@/services/firebaseService');
 
             const savedAppointments: import('@/types').Appointment[] = [];
 
-            // DEV MODE: Skip Firestore (unless forced via ?force_prod=true)
-            const urlParams = new URLSearchParams(window.location.search);
-            const forceProd = urlParams.get('force_prod') === 'true';
-
-            if (import.meta.env.DEV && !forceProd) {
-                console.log("Dev Mode: Skipping Firestore write");
-                for (const app of newAppointments) {
-                    savedAppointments.push({ ...app, id: 'dev-id-' + Math.random() });
-                }
-                // Simulate delay
-                await new Promise(r => setTimeout(r, 1000));
-            }
-            else {
-                // PRODUCTION: Real Firestore
-                for (const app of newAppointments) {
-                    // Remove empty ID before sending, Firestore generates it
-                    const { id, ...appData } = app;
-                    const newId = await addAppointment(appData);
-                    savedAppointments.push({ ...app, id: newId });
-                }
+            for (const app of newAppointments) {
+                // Remove empty ID before sending, Firestore/Service generates it
+                const { id, ...appData } = app;
+                const newId = await addAppointment(appData);
+                savedAppointments.push({ ...app, id: newId });
             }
 
             // Update local store immediately (optimistic UI) keeping previous history
@@ -200,6 +239,7 @@ function InnerApp() {
             }));
 
             setStep(Step.SUCCESS);
+            setCustomerNote('');
             WebApp.MainButton.hide();
         } catch (error) {
             console.error("Booking failed", error);
@@ -258,10 +298,24 @@ function InnerApp() {
         );
     }
 
+    // New User Registration (Onboarding)
+    if (userRole === 'client' && !userProfile) {
+        return (
+            <UserOnboarding
+                userId={currentUserId!}
+                onComplete={async (profile) => {
+                    await saveUserProfile(profile);
+                    setUserProfile(profile);
+                }}
+            />
+        );
+    }
+
     // Client View - No admin button visible
     return (
-        <div className="min-h-screen flex items-center justify-center py-4 sm:py-8 px-4 font-sans">
-            <div className="w-full max-w-md bg-sky-100 rounded-[2.5rem] shadow-2xl shadow-black/20 overflow-hidden min-h-[85vh] sm:h-[850px] relative z-10 text-gray-900 flex flex-col">
+        <div className="min-h-screen bg-sky-100 font-sans text-gray-900">
+            {/* FORCE FULL SCREEN, NO CARD */}
+            <div className="min-h-screen flex flex-col">
 
                 {/* Header: Dynamic Salon Branding */}
                 {step !== Step.SUCCESS && (
@@ -278,10 +332,13 @@ function InnerApp() {
                 )}
 
                 {/* Scrollable Content Area */}
-                <div className="flex-1 overflow-y-auto p-6 pb-24 scrollbar-hide">
+                <div className="flex-1 overflow-y-auto p-6 pb-40 scrollbar-hide">
                     {step === Step.SELECT_SERVICE && (
                         <div className="space-y-8 animate-in fade-in duration-500">
-                            <UserAppointments onReschedule={() => setStep(Step.SELECT_DATE)} />
+                            <UserAppointments
+                                onReschedule={() => setStep(Step.SELECT_DATE)}
+                                userId={currentUserId || 'guest'}
+                            />
 
                             {/* Feature: Extra Button */}
                             {config?.features.extra_button.enabled && (
@@ -342,6 +399,30 @@ function InnerApp() {
                             </div>
 
                             <BookingCalendar />
+
+                            {selectedDate && selectedTimeSlot && (
+                                <div className="mt-8 animate-in slide-in-from-bottom-4 space-y-4">
+                                    <div className="space-y-2">
+                                        <label htmlFor="note" className="text-sm font-medium text-gray-700 block pl-1">
+                                            Комментарий к записи (по желанию)
+                                        </label>
+                                        <textarea
+                                            id="note"
+                                            value={customerNote}
+                                            onChange={(e) => setCustomerNote(e.target.value)}
+                                            placeholder="Например: нужна краска Wella, или аллергия на..."
+                                            className="w-full rounded-xl border-gray-200 bg-white/50 focus:bg-white focus:ring-pink-500 focus:border-pink-500 p-3 min-h-[80px] text-sm"
+                                        />
+                                    </div>
+                                    <Button
+                                        className="w-full btn-gradient h-14 text-xl font-bold rounded-2xl shadow-xl shadow-pink-500/20"
+                                        onClick={handleBooking}
+                                        disabled={isBookingState}
+                                    >
+                                        {isBookingState ? "ОБРАБОТКА..." : (reschedulingId ? "ПЕРЕНЕСТИ ЗАПИСЬ" : (config?.texts.book_button || "ЗАПИСАТЬСЯ"))}
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -351,47 +432,69 @@ function InnerApp() {
                                 <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
                             </div>
                             <div>
-                                <h2 className="text-3xl font-bold text-gray-900 mb-2">Вы записаны!</h2>
+                                <h2 className="text-3xl font-bold text-gray-900 mb-2">
+                                    Вы записаны{userProfile?.firstName ? `, ${userProfile.firstName}` : ''}!
+                                </h2>
                                 <p className="text-gray-500 text-lg">
                                     Ждем вас {selectedDate?.toLocaleDateString()} в <span className="text-gray-900 font-semibold">{selectedTimeSlot}</span>
                                 </p>
                             </div>
 
-                            <div className="w-full max-w-xs pt-10 space-y-3">
+                            <div className="w-full max-w-xs pt-10 space-y-6">
                                 <Button
                                     variant="outline"
-                                    className="w-full h-12 border-gray-200 text-gray-700 hover:bg-gray-50"
+                                    className="w-full h-14 border-2 border-gray-900 text-gray-900 font-bold text-lg hover:bg-gray-100 rounded-xl"
                                     onClick={() => {
                                         reset();
+                                        setCustomerNote('');
                                         setStep(Step.SELECT_SERVICE);
                                     }}
                                 >
                                     Вернуться к услугам
                                 </Button>
-                                <Button
-                                    variant="ghost"
-                                    className="w-full text-gray-400 hover:text-gray-600"
-                                    onClick={() => WebApp.close()}
-                                >
-                                    Закрыть приложение
-                                </Button>
+
+                                <div className="pt-4">
+                                    <Button
+                                        variant="ghost"
+                                        className="w-full text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                        onClick={() => setShowCloseConfirm(true)}
+                                    >
+                                        Закрыть приложение
+                                    </Button>
+                                </div>
+
+                                <Dialog open={showCloseConfirm} onOpenChange={setShowCloseConfirm}>
+                                    <DialogContent className="bg-white border-gray-200 text-gray-900 w-[90%] rounded-2xl">
+                                        <DialogHeader>
+                                            <DialogTitle>Закрыть приложение?</DialogTitle>
+                                            <DialogDescription className="text-gray-500">
+                                                Вы уверены, что хотите выйти?
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <DialogFooter className="flex-row gap-2 justify-end">
+                                            <Button
+                                                variant="outline"
+                                                className="bg-transparent border-gray-200 text-gray-600 mt-0 flex-1"
+                                                onClick={() => setShowCloseConfirm(false)}
+                                            >
+                                                Отмена
+                                            </Button>
+                                            <Button
+                                                variant="destructive"
+                                                className="bg-red-500 hover:bg-red-600 border-none text-white flex-1"
+                                                onClick={() => WebApp.close()}
+                                            >
+                                                Закрыть
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
                             </div>
                         </div>
                     )}
                 </div>
 
-                {/* Fixed Bottom Action Button for Calendar Step */}
-                {step === Step.SELECT_DATE && selectedDate && selectedTimeSlot && (
-                    <div className="absolute bottom-6 left-6 right-6 z-50 animate-in slide-in-from-bottom-4">
-                        <Button
-                            className="w-full btn-gradient h-14 text-xl font-bold rounded-2xl shadow-xl shadow-pink-500/20"
-                            onClick={handleBooking}
-                            disabled={isBookingState}
-                        >
-                            {isBookingState ? "ОБРАБОТКА..." : (reschedulingId ? "ПЕРЕНЕСТИ ЗАПИСЬ" : (config?.texts.book_button || "ЗАПИСАТЬСЯ"))}
-                        </Button>
-                    </div>
-                )}
+                {/* Fixed Bottom Action Button MOVED UP */}
             </div>
             <Toaster position="top-center" />
         </div>
@@ -403,6 +506,7 @@ function App() {
     return (
         <SalonProvider>
             <InnerApp />
+            {import.meta.env.DEV && <DevTools />}
         </SalonProvider>
     );
 }

@@ -35,7 +35,7 @@ export const ServiceList = ({ onServiceSelect }: ServiceListProps) => {
         styling: 'Вечерние и повседневные образы'
     };
 
-    if (loading) return <div className="p-4 text-center text-white">Загрузка услуг...</div>;
+    if (loading) return <div className="p-4 text-center text-gray-500">Загрузка услуг...</div>;
 
     // View: List of Services in Selected Category
     if (selectedCategory) {

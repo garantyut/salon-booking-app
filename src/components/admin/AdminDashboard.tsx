@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { AdminServices } from './AdminServices';
 import { AdminSchedule } from './AdminSchedule';
 import { AdminScheduleSettings } from './AdminScheduleSettings';
-import { Calendar, Users, List, Settings, LogOut } from 'lucide-react';
+import { AdminClients } from './AdminClients';
+import { AdminFinance } from './AdminFinance';
+import { Calendar, Users, List, Settings, LogOut, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBookingStore } from '@/store/bookingStore';
 import { getProAppointments } from '@/services/firebaseService';
@@ -12,7 +14,7 @@ interface AdminDashboardProps {
     onLogout: () => void;
 }
 
-type AdminTab = 'schedule' | 'services' | 'clients' | 'settings';
+type AdminTab = 'schedule' | 'services' | 'clients' | 'settings' | 'finance';
 
 export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
     const [activeTab, setActiveTab] = useState<AdminTab>('schedule');
@@ -43,20 +45,16 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
             <div className="flex-1 overflow-y-auto p-4 pb-24 scrollbar-hide">
                 {activeTab === 'services' && <AdminServices />}
                 {activeTab === 'schedule' && <AdminSchedule />}
+                {activeTab === 'finance' && <AdminFinance />}
                 {activeTab === 'settings' && <AdminScheduleSettings />}
-                {activeTab === 'clients' && (
-                    <div className="text-center text-gray-400 mt-20">
-                        <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                        <p>Раздел "Клиенты" в разработке</p>
-                    </div>
-                )}
+                {activeTab === 'clients' && <AdminClients />}
             </div>
 
             {/* Bottom Navigation - Absolute to container */}
-            <div className="absolute bottom-6 left-6 right-6 bg-white border border-gray-200 rounded-2xl p-2 flex justify-around shadow-xl shadow-gray-200/50 z-50">
+            <div className="absolute bottom-6 left-6 right-6 bg-white border border-gray-200 rounded-2xl p-2 flex justify-between shadow-xl shadow-gray-200/50 z-50 overflow-x-auto">
                 <Button
                     variant="ghost"
-                    className={`flex flex-col items-center gap-1 h-auto py-2 ${activeTab === 'schedule' ? 'text-pink-600 bg-pink-50' : 'text-gray-400 hover:text-gray-600'}`}
+                    className={`flex flex-col items-center gap-1 h-auto py-2 px-1 min-w-[60px] ${activeTab === 'schedule' ? 'text-pink-600 bg-pink-50' : 'text-gray-400 hover:text-gray-600'}`}
                     onClick={() => setActiveTab('schedule')}
                 >
                     <Calendar className="w-5 h-5" />
@@ -65,7 +63,25 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
 
                 <Button
                     variant="ghost"
-                    className={`flex flex-col items-center gap-1 h-auto py-2 ${activeTab === 'services' ? 'text-pink-600 bg-pink-50' : 'text-gray-400 hover:text-gray-600'}`}
+                    className={`flex flex-col items-center gap-1 h-auto py-2 px-1 min-w-[60px] ${activeTab === 'clients' ? 'text-pink-600 bg-pink-50' : 'text-gray-400 hover:text-gray-600'}`}
+                    onClick={() => setActiveTab('clients')}
+                >
+                    <Users className="w-5 h-5" />
+                    <span className="text-[10px]">Клиенты</span>
+                </Button>
+
+                <Button
+                    variant="ghost"
+                    className={`flex flex-col items-center gap-1 h-auto py-2 px-1 min-w-[60px] ${activeTab === 'finance' ? 'text-pink-600 bg-pink-50' : 'text-gray-400 hover:text-gray-600'}`}
+                    onClick={() => setActiveTab('finance')}
+                >
+                    <Wallet className="w-5 h-5" />
+                    <span className="text-[10px]">Финансы</span>
+                </Button>
+
+                <Button
+                    variant="ghost"
+                    className={`flex flex-col items-center gap-1 h-auto py-2 px-1 min-w-[60px] ${activeTab === 'services' ? 'text-pink-600 bg-pink-50' : 'text-gray-400 hover:text-gray-600'}`}
                     onClick={() => setActiveTab('services')}
                 >
                     <List className="w-5 h-5" />
@@ -74,7 +90,7 @@ export const AdminDashboard = ({ onLogout }: AdminDashboardProps) => {
 
                 <Button
                     variant="ghost"
-                    className={`flex flex-col items-center gap-1 h-auto py-2 ${activeTab === 'settings' ? 'text-pink-600 bg-pink-50' : 'text-gray-400 hover:text-gray-600'}`}
+                    className={`flex flex-col items-center gap-1 h-auto py-2 px-1 min-w-[60px] ${activeTab === 'settings' ? 'text-pink-600 bg-pink-50' : 'text-gray-400 hover:text-gray-600'}`}
                     onClick={() => setActiveTab('settings')}
                 >
                     <Settings className="w-5 h-5" />

@@ -18,6 +18,7 @@ interface BookingState {
     setAppointments: (apps: Appointment[]) => void;
     addAppointment: (app: Appointment) => void;
     cancelAppointment: (id: string) => void;
+    updateAppointment: (id: string, updates: Partial<Appointment>) => void;
     rescheduleAppointment: (id: string, newDate: Date, newTime: string) => void;
 
     // Rescheduling state
@@ -77,6 +78,10 @@ export const useBookingStore = create<BookingState>((set, get) => ({
 
     cancelAppointment: (id) => set((state) => ({
         appointments: state.appointments.filter(a => a.id !== id)
+    })),
+
+    updateAppointment: (id, updates) => set((state) => ({
+        appointments: state.appointments.map(a => a.id === id ? { ...a, ...updates } : a)
     })),
 
     rescheduleAppointment: (id, newDate, newTime) => set((state) => ({

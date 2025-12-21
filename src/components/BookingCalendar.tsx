@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useBookingStore } from '@/store/bookingStore';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -5,6 +6,7 @@ import { format, isSameDay, parseISO, getDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { MOCK_MASTERS } from '@/services/mockData';
+import { isDayOff, isDateFullyBooked, generateTimeSlots } from '@/utils/scheduleUtils';
 
 export const BookingCalendar = () => {
     const {
@@ -16,159 +18,109 @@ export const BookingCalendar = () => {
 
     // Get the master's schedule (assuming single master for now)
     const master = MOCK_MASTERS[0];
-    const workingHours = master?.workingHours;
 
-    // Check if a date is a day off
-    const isDayOff = (date: Date) => {
-        if (!workingHours) return false; // If no config, assume working
-        const dayOfWeek = getDay(date); // 0 = Sunday, 1 = Monday, etc.
-        const schedule = workingHours[dayOfWeek];
-        return schedule?.isDayOff ?? false;
-    };
-
-    // Get working hours for a specific date
-    const getWorkingHoursForDate = (date: Date) => {
-        if (!workingHours) return { start: '10:00', end: '20:00' }; // Default
-        const dayOfWeek = getDay(date);
-        const schedule = workingHours[dayOfWeek];
-        if (!schedule || schedule.isDayOff) return null;
-        return { start: schedule.start, end: schedule.end };
-    };
-
-    // Helper to check availability for ANY date
+    // Helper to check availability using shared Utility
     const checkAvailability = (date: Date) => {
-        // 1. Basic checks
-        if (!workingHours) return false;
-        const dayOfWeek = getDay(date);
-        const schedule = workingHours[dayOfWeek];
-        if (!schedule || schedule.isDayOff) return false;
-
-        // 2. Parse working hours
-        const [startH, startM] = schedule.start.split(':').map(Number);
-        const [endH, endM] = schedule.end.split(':').map(Number);
-        const workStartMins = startH * 60 + startM;
-        const workEndMins = endH * 60 + endM;
-
-        // 3. Get existing appointments for this date
-        const dayApps = appointments.filter(a => isSameDay(parseISO(a.date), date));
-
-        // 4. Calculate busy ranges
         const { services } = useBookingStore.getState();
-        const busyRanges = dayApps.map(app => {
-            const [h, m] = app.timeSlot.split(':').map(Number);
-            const start = h * 60 + m;
-            const service = services.find(s => s.id === app.serviceId);
-            const duration = service ? service.duration : 60;
-            return { start, end: start + duration };
-        });
-
-        // 5. Check if at least one slot is available
-        const requiredDuration = getTotalDuration();
-
-        for (let mins = workStartMins; mins < workEndMins; mins += 30) {
-            const startMins = mins;
-            const endMins = startMins + requiredDuration;
-
-            // Fits in working day?
-            if (endMins > workEndMins) continue;
-
-            // Overlaps with busy?
-            let isBusy = false;
-            for (const busy of busyRanges) {
-                if (startMins < busy.end && busy.start < endMins) {
-                    isBusy = true;
-                    break;
-                }
-            }
-
-            if (!isBusy) return true; // Found at least one slot
-        }
-
-        return false; // No slots found
+        // Check availability for a standard duration (e.g. Total Duration of cart)
+        const totalDuration = getTotalDuration();
+        const slots = generateTimeSlots(date, appointments, services, master, totalDuration);
+        return slots.some(s => s.available);
     };
+
+    // Set default date to Today if not set
+    useEffect(() => {
+        if (!selectedDate) {
+            setDate(new Date());
+        }
+    }, [selectedDate, setDate]);
+
+    // Clear time slot when date changes to prevent stale selection
+    useEffect(() => {
+        setTimeSlot(null);
+    }, [selectedDate, setTimeSlot]);
 
     const isFullyBooked = (date: Date) => {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        // Don't mark past days or days off as fully booked (handle via disabled)
-        if (date < today || isDayOff(date)) return false;
-
-        // If it's a working day but has NO available slots -> Fully Booked
-        return !checkAvailability(date);
-    };
-
-    const generateTimeSlots = () => {
-        if (!selectedDate) return [];
-        // Re-use logic (simplified for selectedDate) implies we could just call checkAvailability 
-        // but we need the actual slots array here. Keeping the logic separate or refactoring completely 
-        // is safer. For now, I'll keep generateTimeSlots but we could optimize later.
-        // Actually, to ensure consistency, let's copy the logic or keep as is since generateTimeSlots returns the ARRAY.
-
-        const hoursConfig = getWorkingHoursForDate(selectedDate);
-        if (!hoursConfig) return [];
-
-        // ... (Existing logic below calculates specific slots, effectively same core math)
-        // To be safe and minimal change, I will leave generateTimeSlots as is mostly, 
-        // relying on checkAvailability for the Calendar visual only.
-
-        // ... (We still need the existing generateTimeSlots function body below this replacement)
-        // WAIT: I need to output generateTimeSlots logic too if I'm replacing the block containing it?
-        // Ah, the user instruction says "Extract...".
-        // I will implement checkAvailability and then leave generateTimeSlots to execute its loop.
-        // But for the sake of this tool use, I need to provide the content.
-
-        // Let's copy the body of generateTimeSlots logic for the specific date.
-
-        const slots = [];
-        const requiredDuration = getTotalDuration();
-        const [startH, startM] = hoursConfig.start.split(':').map(Number);
-        const [endH, endM] = hoursConfig.end.split(':').map(Number);
-        const workStartMins = startH * 60 + startM;
-        const workEndMins = endH * 60 + endM;
-
-        const dayApps = appointments.filter(a => isSameDay(parseISO(a.date), selectedDate));
-
-        // Helper: Time string to minutes
-        const toMinutes = (time: string) => {
-            const [h, m] = time.split(':').map(Number);
-            return h * 60 + m;
-        };
-
+        // Use shared utility for "Fully Booked" check (visual strikethrough)
         const { services } = useBookingStore.getState();
-        const busyRanges = dayApps.map(app => {
-            const start = toMinutes(app.timeSlot);
-            const service = services.find(s => s.id === app.serviceId);
-            const duration = service ? service.duration : 60;
-            return { start, end: start + duration };
-        });
-
-        for (let mins = workStartMins; mins < workEndMins; mins += 30) {
-            const h = Math.floor(mins / 60);
-            const m = mins % 60;
-            const startMins = mins;
-            const endMins = startMins + requiredDuration;
-            const timeString = `${h}:${m.toString().padStart(2, '0')}`;
-
-            let isAvailable = true;
-            if (endMins > workEndMins) isAvailable = false;
-
-            if (isAvailable) {
-                for (const busy of busyRanges) {
-                    if (startMins < busy.end && busy.start < endMins) {
-                        isAvailable = false;
-                        break;
-                    }
-                }
-            }
-            slots.push({ time: timeString, available: isAvailable });
-        }
-        return slots;
+        return isDateFullyBooked(date, appointments, services, master);
     };
 
-    const timeSlots = generateTimeSlots();
+    const timeSlots = selectedDate
+        ? generateTimeSlots(selectedDate, appointments, useBookingStore.getState().services, master, getTotalDuration())
+        : [];
+
+    // CSS for custom calendar styling (Same as AdminSchedule)
+    const calendarStyles = `
+        .rdp { margin: 0; width: 100% !important; --rdp-cell-size: 50px; }
+        
+        /* Target standard HTML tags inside the container to bypass specific class names */
+        .rdp table { width: 100% !important; max-width: none !important; }
+        
+        /* Force rows to flex uniformly */
+        .rdp tbody tr, .rdp thead tr { 
+            display: flex !important; 
+            width: 100% !important; 
+            justify-content: space-between !important; 
+        }
+        
+        /* Force cells to expand */
+        .rdp td, .rdp th { 
+            width: 100% !important; 
+            flex: 1 !important; 
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            padding: 0 !important;
+        }
+
+        /* Adjust height for day cells */
+        .rdp td { height: 54px !important; }
+
+        /* Target the day button broadly */
+        .rdp button[name="day"], .rdp-day, .rdp td button {
+            width: 100% !important;
+            height: 100% !important;
+            border-radius: 12px !important;
+            font-size: 19px !important;
+            font-weight: 600 !important;
+        }
+
+        /* Header styling */
+        .rdp th {
+            font-size: 14px; 
+            text-transform: uppercase; 
+            color: #9ca3af; 
+            font-weight: 500;
+            padding-bottom: 8px !important;
+            height: auto !important;
+        }
+
+        .rdp-caption { 
+            display: flex; 
+            justify-content: center; 
+            width: 100%; 
+            position: relative; 
+            margin-bottom: 16px; 
+        }
+        
+        .rdp-months { width: 100% !important; justify-content: center; }
+        .rdp-month { width: 100% !important; }
+
+        .rdp-day_today { color: #2563eb; }
+        /* Override selected style for Client View specifically if needed, but keeping consistent pink/green mix? 
+           Actually, the client view uses Green theme in buttons. Admin uses Pink.
+           Let's update selected style to match Client Green theme */
+        .rdp-day_selected { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #15803d !important; }
+        .rdp-day_outside { opacity: 0.3; }
+    `;
+
+
 
     return (
         <div className="space-y-6 animate-in slide-in-from-right-8 duration-500 pb-20">
+            <style>{calendarStyles}</style>
+
             <div className="flex flex-col items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-900">
                     {selectedDate
@@ -180,7 +132,7 @@ export const BookingCalendar = () => {
                 </p>
             </div>
 
-            <div className="flex justify-center relative">
+            <div className="relative">
                 <Calendar
                     mode="single"
                     selected={selectedDate}
@@ -189,20 +141,23 @@ export const BookingCalendar = () => {
                     disabled={(date: Date) => {
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
-                        return date < today || isDayOff(date);
+                        // Disable if: Past, Day Off, OR Fully Booked
+                        return date < today || isDayOff(date, master) || isFullyBooked(date);
                     }}
                     modifiers={{
-                        fullyBooked: isFullyBooked
+                        busy: isFullyBooked
                     }}
                     modifiersClassNames={{
-                        fullyBooked: 'bg-red-500 text-white hover:bg-red-500 hover:text-white opacity-100'
+                        busy: 'strikethrough-bold'
                     }}
                     classNames={{
-                        day_selected: "bg-green-500 text-white hover:bg-green-600 hover:text-white focus:bg-green-600 focus:text-white"
+                        // These might be overridden by our heavy CSS above, but let's keep them
+                        day_selected: "bg-green-600 text-white hover:bg-green-600 hover:text-white focus:bg-green-600 focus:text-white rounded-full font-bold shadow-md shadow-green-500/20",
+                        day_today: "bg-green-100 text-green-700 font-extrabold border-2 border-green-500 rounded-full",
                     }}
                     initialFocus
                     locale={ru}
-                    className="rounded-2xl border-none bg-white shadow-xl shadow-gray-200 p-4 w-full max-w-[320px]"
+                    className="rounded-2xl border-none bg-white shadow-xl shadow-gray-200 p-4 w-full"
                 />
             </div>
 

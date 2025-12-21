@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { useSalon } from '@/contexts/SalonContext';
 import { useBookingStore } from '@/store/bookingStore';
-import { getUserAppointments, MOCK_SERVICES } from '@/services/mockData';
+import { getUserAppointments } from '@/services/firebaseService';
+import { MOCK_SERVICES } from '@/services/mockData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Clock, Scissors, Pencil, Trash2, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
@@ -21,18 +22,19 @@ import { Button } from "@/components/ui/button";
 
 interface UserAppointmentsProps {
     onReschedule: () => void;
+    userId: string;
 }
 
-export const UserAppointments = ({ onReschedule }: UserAppointmentsProps) => {
+export const UserAppointments = ({ onReschedule, userId }: UserAppointmentsProps) => {
     const { appointments, setAppointments, cancelAppointment, startRescheduling } = useBookingStore();
     const { config } = useSalon();
 
     useEffect(() => {
         // Only load if empty to preserve local edits during session
-        if (appointments.length === 0) {
-            getUserAppointments().then(setAppointments);
+        if (appointments.length === 0 && userId) {
+            getUserAppointments(userId).then(setAppointments);
         }
-    }, [setAppointments, appointments.length]);
+    }, [setAppointments, appointments.length, userId]);
 
     if (appointments.length === 0) return null;
 
@@ -66,21 +68,25 @@ export const UserAppointments = ({ onReschedule }: UserAppointmentsProps) => {
                                 <div className="absolute top-0 left-0 w-1 h-full bg-green-500" />
                                 <CardContent className="p-4">
                                     <div className="flex justify-between items-start mb-2">
-                                        <h3 className="font-bold text-lg text-gray-900">{service?.title}</h3>
-                                        <div className="px-2 py-1 rounded-full bg-green-50 text-green-600 text-xs font-bold uppercase tracking-wider">
-                                            Скоро
+                                        <div>
+                                            <h3 className="font-bold text-lg text-gray-900 leading-tight">{service?.title}</h3>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <Calendar className="w-5 h-5 text-green-500" />
+                                                <span className="text-lg font-bold text-gray-700">
+                                                    {format(new Date(app.date), 'd MMMM', { locale: ru })}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                            <div className="flex items-center gap-1">
+                                                <Clock className="w-6 h-6 text-green-600" />
+                                                <span className="text-3xl font-black text-green-600 leading-none">
+                                                    {app.timeSlot}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
-                                        <div className="flex items-center gap-1.5">
-                                            <Calendar className="w-4 h-4 text-green-500" />
-                                            {format(new Date(app.date), 'd MMMM', { locale: ru })}
-                                        </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <Clock className="w-4 h-4 text-green-500" />
-                                            {app.timeSlot}
-                                        </div>
-                                    </div>
+                                    <div className="mb-4" /> {/* Spacer */}
 
                                     <div className="flex gap-2">
                                         <Button

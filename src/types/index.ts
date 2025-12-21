@@ -3,32 +3,22 @@ export interface Service {
     title: string;
     price: number;
     duration: number; // in minutes
-    category: string; // broadened from union type for flexibility
-}
-
-export interface WorkingHours {
-    [dayOfWeek: number]: {
-        start: string; // "09:00"
-        end: string;   // "18:00"
-        isDayOff: boolean;
-    };
-}
-
-export interface ScheduleException {
-    date: string; // YYYY-MM-DD
-    isDayOff: boolean;
-    start?: string;
-    end?: string;
-    note?: string;
+    category: 'mens' | 'womens' | 'kids' | 'coloring' | 'styling';
+    description?: string;
 }
 
 export interface Master {
     id: string;
     name: string;
     photoUrl: string;
-    specializations: string[]; // Service IDs or Categories
-    workingHours?: WorkingHours;
-    exceptions?: ScheduleException[];
+    specializations: string[]; // Service IDs
+    workingHours: {
+        [key: number]: { // 0 = Sunday, 1 = Monday...
+            start: string;
+            end: string;
+            isDayOff: boolean;
+        };
+    };
 }
 
 export interface Appointment {
@@ -36,22 +26,29 @@ export interface Appointment {
     clientId: string;
     masterId: string;
     serviceId: string;
-    date: string; // ISO Date String YYYY-MM-DD
-    timeSlot: string; // HH:mm
-    status: 'pending' | 'confirmed' | 'cancelled';
-    notes?: string; // Master's notes (e.g. formula used)
+    date: string; // ISO Date String
+    timeSlot: string; // "14:30"
+    status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
     createdAt: number;
+    notes?: string;
+    price: number;      // Base price from service
+    finalPrice?: number; // Actual paid amount
 }
 
 export interface User {
-    id: string; // Added for internal linking
-    tgId: number;
+    id: string;
+    tgId?: number;
     name: string;
     phone?: string;
     history: string[]; // Appointment IDs
 }
 
-export interface TimeSlot {
-    time: string;
-    available: boolean;
+export interface UserProfile {
+    id: string; // usually tgId as string
+    firstName: string;
+    lastName?: string;
+    phone: string;
+    createdAt: number;
+    telegramId?: number;
+    username?: string; // Telegram username
 }

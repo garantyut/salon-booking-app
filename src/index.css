@@ -80,82 +80,91 @@
     box-shadow: 0 2px 5px rgba(190, 24, 93, 0.2);
   }
 
-  /* Calendar Overrides */
+  /* Calendar Overrides - Global Style matching Admin Schedule */
   .rdp {
     margin: 0 auto !important;
-    --rdp-cell-size: 44px !important;
-    /* Slightly larger cells */
-    color: #111827 !important;
-    /* Almost black */
+    width: 100% !important;
+    --rdp-cell-size: 50px !important;
+  }
+
+  .rdp table {
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .rdp tbody tr,
+  .rdp thead tr {
+    display: flex !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  .rdp td,
+  .rdp th {
+    width: 100% !important;
+    flex: 1 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 0 !important;
+  }
+
+  .rdp td {
+    height: 54px !important;
+  }
+
+  /* Target buttons specifically */
+  .rdp button[name="day"],
+  .rdp-day,
+  .rdp td button {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 12px !important;
+    font-size: 19px !important;
+    font-weight: 600 !important;
+  }
+
+  .rdp th {
+    font-size: 14px !important;
+    text-transform: uppercase !important;
+    color: #9ca3af !important;
+    font-weight: 500 !important;
+    padding-bottom: 8px !important;
+    height: auto !important;
+  }
+
+  .rdp-caption {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    position: relative;
+    margin-bottom: 16px;
   }
 
   .rdp-months {
+    width: 100% !important;
     justify-content: center !important;
   }
 
-  .rdp-caption_label {
-    color: #111827 !important;
-    font-size: 1.1rem !important;
-    /* Larger month title */
+  .rdp-month {
+    width: 100% !important;
+  }
+
+  /* Today's date - distinct green styling */
+  .rdp-day_today:not(.rdp-day_selected) {
+    background-color: #ecfccb !important;
+    color: #15803d !important;
+    border: 2px solid #84cc16 !important;
     font-weight: 800 !important;
-    /* Extra bold */
-    text-transform: capitalize;
-  }
-
-  .rdp-head_cell {
-    color: #4b5563 !important;
-    /* Gray-600 */
-    font-weight: 600 !important;
-    font-size: 0.9rem !important;
-    text-transform: uppercase;
-  }
-
-  .rdp-day {
-    font-size: 1rem !important;
-    font-weight: 600 !important;
-    /* Semi-bold numbers */
-    color: #1f2937 !important;
-    /* Gray-800 */
   }
 
   .rdp-day_selected {
-    background-color: #22c55e !important;
-    /* Green-500 */
-    color: white !important;
-    font-weight: 800 !important;
-    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.4);
-    border-radius: 50%;
-  }
-
-  .rdp-day:hover:not(.rdp-day_selected) {
-    background: var(--secondary) !important;
-    border-radius: 50%;
-    color: #be185d !important;
-    /* Pink text on hover */
-    font-weight: bold !important;
-  }
-
-  .rdp-button:hover:not([disabled]):not(.rdp-day_selected) {
-    color: #be185d !important;
     background-color: #fce7f3 !important;
+    border: 2px solid #db2777 !important;
+    color: #be185d !important;
   }
 
-  /* Fully Booked State */
-  .rdp-day.bg-red-500 {
-    background-color: #ef4444 !important;
-    /* Tailwind Red-500 */
-    color: white !important;
-    opacity: 1 !important;
-  }
-
-  .rdp-day.bg-red-500:hover {
-    background-color: #dc2626 !important;
-    /* Red-600 */
-  }
-
-  /* Selected must win over fully booked if user selects it (though usually one wouldn't select a fully booked day, but just in case) */
-  .rdp-day_selected.bg-red-500 {
-    background-color: #22c55e !important;
-    /* Switch to green if it became selected somehow */
+  .rdp-day_outside {
+    opacity: 0.3;
   }
 }

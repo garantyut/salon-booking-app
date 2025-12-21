@@ -34,7 +34,7 @@ export const SalonProvider = ({ children }: { children: ReactNode }) => {
                 }
 
                 // 3. Fallback to default (for development/testing) if still empty
-                if (!salonId) {
+                if (!salonId || salonId === 'localhost' || salonId.startsWith('192.168')) {
                     console.warn('No salon_id found, defaulting to "irina" for dev purposes');
                     salonId = 'irina';
                 }
