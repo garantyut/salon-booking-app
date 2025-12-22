@@ -3,7 +3,7 @@ import WebApp from '@twa-dev/sdk';
 import { init as initTelegramSDK, viewport, miniApp, backButton } from '@telegram-apps/sdk';
 import { useBookingStore } from '@/store/bookingStore';
 import { readItems } from '@directus/sdk';
-import { client } from '@/lib/directus';
+import { client, getImageUrl } from '@/lib/directus';
 import { getAdminTelegramIds, getUserProfile, saveUserProfile } from '@/services/firebaseService';
 import { ServiceList } from '@/components/ServiceList';
 import { MasterList } from '@/components/MasterList';
@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/dialog";
 
 import { DevTools } from '@/components/dev/DevTools';
-import { Service } from '@/types';
 
 enum Step {
     SELECT_SERVICE = 0,
@@ -52,16 +51,17 @@ function InnerApp() {
     } = useBookingStore();
 
     const [step, setStep] = useState<Step>(Step.SELECT_SERVICE);
-    const [draftService, setDraftService] = useState<Service | null>(null);
+    const [draftService, setDraftService] = useState<import('@/types').Service | null>(null);
     const [isBookingState, setIsBookingState] = useState(false);
     const [showCloseConfirm, setShowCloseConfirm] = useState(false);
     const isBookingRef = useRef(false);
 
     // Role-based access control
+    // Role-based access control
     const [userRole, setUserRole] = useState<UserRole>('loading');
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [userProfile, setUserProfile] = useState<import('@/types').UserProfile | null>(null);
-    const [customerNote, setCustomerNote] = useState('');
+    const [customerNote, setCustomerNote] = useState(''); // New state
     const { loading: configLoading, config } = useSalon();
 
     // Initial Data Load & Role Detection
@@ -74,7 +74,8 @@ function InnerApp() {
             if (!tgUser && import.meta.env.DEV) {
                 console.log("Dev mode: Mocking Telegram User");
                 setCurrentUserId('dev-user-123');
-                setUserRole('client');
+                setUserRole('client'); // Default to client for dev
+                // If you want to test admin, change this to 'admin' or add a toggle
 
                 // Allow admin role testing via URL param ?role=admin
                 const params = new URLSearchParams(window.location.search);
@@ -90,6 +91,7 @@ function InnerApp() {
                 if (!localStorage.getItem('salon_guest_id')) {
                     localStorage.setItem('salon_guest_id', userId);
                 }
+                // Guest flow
                 console.log("No Telegram user found, defaulting to Guest Client");
             }
 
@@ -102,18 +104,24 @@ function InnerApp() {
             // Telegram Config
             try {
                 if (tgUser) {
+                    // Initialize new SDK
                     try {
                         initTelegramSDK();
 
+                        // Mount and expand viewport
                         if (viewport.mount.isAvailable()) {
                             await viewport.mount();
                         }
                         if (viewport.expand.isAvailable()) {
                             viewport.expand();
                         }
+
+                        // Request fullscreen for immersive experience
                         if (viewport.requestFullscreen.isAvailable()) {
                             await viewport.requestFullscreen();
                         }
+
+                        // Mount mini app
                         if (miniApp.mount.isAvailable()) {
                             await miniApp.mount();
                         }
@@ -121,6 +129,7 @@ function InnerApp() {
                         console.warn('New SDK initialization failed, falling back to legacy', sdkErr);
                     }
 
+                    // Legacy fallback
                     WebApp.expand();
                     WebApp.ready();
                     if (WebApp.isVersionAtLeast('6.1')) {
@@ -147,19 +156,24 @@ function InnerApp() {
 
     // Load services from Directus
     useEffect(() => {
-        async function fetchServices() {
+        async function fetchServicesFromDirectus() {
             if (services.length > 0) return;
 
             console.log("App: Loading services from Directus...");
             try {
                 const result = await client.request(readItems('services'));
-                console.log("App: Services loaded from Directus:", result);
-                setServices(result as Service[]);
+                // Transform data: convert image ID to full URL
+                const transformedServices = (result as any[]).map(item => ({
+                    ...item,
+                    image: item.image ? getImageUrl(item.image) : null
+                }));
+                console.log("App: Services loaded from Directus:", transformedServices);
+                setServices(transformedServices as import('@/types').Service[]);
             } catch (error) {
                 console.error("App: Failed to load services from Directus:", error);
             }
         }
-        fetchServices();
+        fetchServicesFromDirectus();
     }, [services.length, setServices]);
 
     // Back Button Logic
@@ -187,11 +201,12 @@ function InnerApp() {
     const handleBooking = async () => {
         if (isBookingRef.current) return;
         isBookingRef.current = true;
-        setIsBookingState(true);
+        setIsBookingState(true); // Update UI
 
         try {
             if (reschedulingId) {
                 if (!selectedDate || !selectedTimeSlot) return;
+                // TODO: Implement real rescheduling backend logic
                 rescheduleAppointment(reschedulingId, selectedDate, selectedTimeSlot);
                 setStep(Step.SUCCESS);
                 return;
@@ -199,8 +214,11 @@ function InnerApp() {
 
             if (cart.length === 0 || !selectedDate || !selectedTimeSlot) return;
 
+            // Use the persistent currentUserId
             const clientId = currentUserId || (WebApp.initDataUnsafe?.user?.id.toString()) || 'unknown-user';
 
+            // Create appointments from cart
+            // Helper to add minutes to "HH:mm"
             const addMinutes = (time: string, minsToAdd: number) => {
                 const [h, m] = time.split(':').map(Number);
                 const totalMins = h * 60 + m + minsToAdd;
@@ -209,10 +227,11 @@ function InnerApp() {
                 return `${newH}:${newM.toString().padStart(2, '0')}`;
             };
 
+            // Calculate start times for each service in sequence
             let currentStartTime = selectedTimeSlot;
             const newAppointments: import('@/types').Appointment[] = cart.map(item => {
                 const appointment = {
-                    id: '',
+                    id: '', // Will be set by Firestore
                     clientId: clientId,
                     masterId: item.master ? item.master.id : 'master-1',
                     serviceId: item.service.id,
@@ -224,22 +243,28 @@ function InnerApp() {
                     notes: customerNote
                 };
 
+                // Update start time for the NEXT appointment
                 currentStartTime = addMinutes(currentStartTime, item.service.duration);
+
                 return appointment;
             });
 
+            // Persist to Real Backend (or LocalStorage in Dev via service)
             const { addAppointment } = await import('@/services/firebaseService');
+
             const savedAppointments: import('@/types').Appointment[] = [];
 
             for (const app of newAppointments) {
+                // Remove empty ID before sending, Firestore/Service generates it
                 const { id, ...appData } = app;
                 const newId = await addAppointment(appData);
                 savedAppointments.push({ ...app, id: newId });
             }
 
+            // Update local store immediately (optimistic UI) keeping previous history
             useBookingStore.setState(state => ({
                 appointments: [...state.appointments, ...savedAppointments],
-                cart: [],
+                cart: [], // Clear cart after booking
             }));
 
             setStep(Step.SUCCESS);
@@ -315,9 +340,10 @@ function InnerApp() {
         );
     }
 
-    // Client View - Full Booking Flow
+    // Client View - No admin button visible
     return (
         <div className="min-h-screen bg-sky-100 font-sans text-gray-900">
+            {/* FORCE FULL SCREEN, NO CARD */}
             <div className="min-h-screen flex flex-col">
 
                 {/* Header: Dynamic Salon Branding */}
@@ -496,6 +522,8 @@ function InnerApp() {
                         </div>
                     )}
                 </div>
+
+                {/* Fixed Bottom Action Button MOVED UP */}
             </div>
             <Toaster position="top-center" />
         </div>
