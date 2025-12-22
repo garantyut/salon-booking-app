@@ -2,8 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import WebApp from '@twa-dev/sdk';
 import { init as initTelegramSDK, viewport, miniApp, backButton } from '@telegram-apps/sdk';
 import { useBookingStore } from '@/store/bookingStore';
+import { client, getImageUrl } from './lib/directus';
 import { readItems } from '@directus/sdk';
-import { client, getImageUrl } from '@/lib/directus';
 import { getAdminTelegramIds, getUserProfile, saveUserProfile } from '@/services/firebaseService';
 import { ServiceList } from '@/components/ServiceList';
 import { MasterList } from '@/components/MasterList';
@@ -154,27 +154,27 @@ function InnerApp() {
         detectRole();
     }, []);
 
-    // Load services from Directus
+    // Load services from Directus when config is available
     useEffect(() => {
-        async function fetchServicesFromDirectus() {
-            if (services.length > 0) return;
+        console.log("App: Checking services load triggers", { servicesLen: services.length, salonId: config?.salon_id });
 
-            console.log("App: Loading services from Directus...");
-            try {
-                const result = await client.request(readItems('services'));
-                // Transform data: convert image ID to full URL
-                const transformedServices = (result as any[]).map(item => ({
-                    ...item,
+        if (services.length === 0) {
+            console.log("App: Loading services from Directus");
+            client.request(readItems('services')).then(data => {
+                console.log("App: Services loaded from Directus:", data);
+                // Transform data with image URLs
+                const transformedServices = data.map((item: any) => ({
+                    id: item.id,
+                    title: item.title,
+                    price: item.price,
+                    duration: item.duration,
+                    category: item.category,
                     image: item.image ? getImageUrl(item.image) : null
                 }));
-                console.log("App: Services loaded from Directus:", transformedServices);
-                setServices(transformedServices as import('@/types').Service[]);
-            } catch (error) {
-                console.error("App: Failed to load services from Directus:", error);
-            }
+                setServices(transformedServices);
+            }).catch(err => console.error("App: Service load from Directus failed", err));
         }
-        fetchServicesFromDirectus();
-    }, [services.length, setServices]);
+    }, [services.length, setServices, config]);
 
     // Back Button Logic
     const handleBack = () => {
