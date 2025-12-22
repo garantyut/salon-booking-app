@@ -101,40 +101,52 @@ function InnerApp() {
             const profile = await getUserProfile(userId);
             setUserProfile(profile);
 
-            // Telegram Config
+            // Telegram Config - Fullscreen mode to hide header
             try {
                 if (tgUser) {
-                    // Initialize new SDK
+                    // Legacy SDK ready first
+                    WebApp.ready();
+                    WebApp.expand();
+
+                    // Set colors to match app background
+                    if (WebApp.isVersionAtLeast('6.1')) {
+                        WebApp.setHeaderColor('#ffffff');
+                        WebApp.setBackgroundColor('#ffffff');
+                    }
+
+                    // Initialize new SDK for fullscreen
                     try {
                         initTelegramSDK();
 
-                        // Mount and expand viewport
+                        // Mount viewport first
                         if (viewport.mount.isAvailable()) {
                             await viewport.mount();
                         }
+
+                        // Expand viewport
                         if (viewport.expand.isAvailable()) {
                             viewport.expand();
-                        }
-
-                        // Request fullscreen for immersive experience
-                        if (viewport.requestFullscreen.isAvailable()) {
-                            await viewport.requestFullscreen();
                         }
 
                         // Mount mini app
                         if (miniApp.mount.isAvailable()) {
                             await miniApp.mount();
                         }
-                    } catch (sdkErr) {
-                        console.warn('New SDK initialization failed, falling back to legacy', sdkErr);
-                    }
 
-                    // Legacy fallback
-                    WebApp.expand();
-                    WebApp.ready();
-                    if (WebApp.isVersionAtLeast('6.1')) {
-                        WebApp.setHeaderColor('#ffffff');
-                        WebApp.setBackgroundColor('#ffffff');
+                        // Request fullscreen after a small delay (required for some Telegram versions)
+                        setTimeout(async () => {
+                            try {
+                                if (viewport.requestFullscreen.isAvailable()) {
+                                    await viewport.requestFullscreen();
+                                    console.log('Fullscreen mode activated');
+                                }
+                            } catch (fsErr) {
+                                console.warn('Fullscreen request failed:', fsErr);
+                            }
+                        }, 300);
+
+                    } catch (sdkErr) {
+                        console.warn('New SDK initialization failed:', sdkErr);
                     }
                 }
             } catch (e) {
