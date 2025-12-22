@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import WebApp from '@twa-dev/sdk';
 import { init as initTelegramSDK, viewport, miniApp, backButton } from '@telegram-apps/sdk';
 import { useBookingStore } from '@/store/bookingStore';
-import { getServices } from '@/services/mockData';
+import { getServices } from '@/lib/directus';
 import { getAdminTelegramIds, getUserProfile, saveUserProfile } from '@/services/firebaseService';
 import { ServiceList } from '@/components/ServiceList';
 import { MasterList } from '@/components/MasterList';
@@ -153,19 +153,18 @@ function InnerApp() {
         detectRole();
     }, []);
 
-    // Load services when config is available
+    // Load services from Directus
     useEffect(() => {
-        console.log("App: Checking services load triggers", { servicesLen: services.length, salonId: config?.salon_id });
+        console.log("App: Checking services load", { servicesLen: services.length });
 
         if (services.length === 0) {
-            const salonIdToLoad = config?.salon_id || 'irina';
-            console.log("App: Loading services for", salonIdToLoad);
-            getServices(salonIdToLoad).then(data => {
-                console.log("App: Services loaded:", data);
-                setServices(data);
+            console.log("App: Loading services from Directus");
+            getServices().then(data => {
+                console.log("App: Services loaded from Directus:", data);
+                setServices(data as import('@/types').Service[]);
             }).catch(err => console.error("App: Service load failed", err));
         }
-    }, [services.length, setServices, config]);
+    }, [services.length, setServices]);
 
     // Back Button Logic
     const handleBack = () => {

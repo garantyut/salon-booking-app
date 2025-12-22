@@ -3,8 +3,9 @@ export interface Service {
     title: string;
     price: number;
     duration: number; // in minutes
-    category: 'mens' | 'womens' | 'kids' | 'coloring' | 'styling';
+    category: string; // Dynamic category from Directus
     description?: string;
+    image?: string | null; // Image UUID from Directus
 }
 
 export interface Master {
