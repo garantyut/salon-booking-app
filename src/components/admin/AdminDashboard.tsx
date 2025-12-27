@@ -7,7 +7,7 @@ import { AdminFinance } from './AdminFinance';
 import { Calendar, Users, List, Settings, LogOut, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBookingStore } from '@/store/bookingStore';
-import { getProAppointments } from '@/services/firebaseService';
+import { getProAppointments } from '@/services/directusService';
 import { useSalon } from '@/contexts/SalonContext';
 
 interface AdminDashboardProps {

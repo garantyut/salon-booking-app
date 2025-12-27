@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useBookingStore } from '@/store/bookingStore';
 import { Appointment } from '@/types';
 import { MOCK_SERVICES, MOCK_MASTERS } from '@/services/mockData';
-import { getProAppointments, addAppointment as addAppointmentService } from '@/services/firebaseService';
+import { getProAppointments, addAppointment as addAppointmentService } from '@/services/directusService';
 import { format, startOfToday, isBefore, isSameDay } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { isDayOff, isDateFullyBooked, checkSlotAvailability } from '@/utils/scheduleUtils';

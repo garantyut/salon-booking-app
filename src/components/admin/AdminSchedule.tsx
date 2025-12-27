@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useBookingStore } from '@/store/bookingStore';
 import { Appointment } from '@/types';
-import { getUsers, getProAppointments, deleteAppointment, updateAppointment } from '@/services/firebaseService';
+import { getUsers, getProAppointments, deleteAppointment, updateAppointment } from '@/services/directusService';
 import { MOCK_SERVICES } from '@/services/mockData';
 import { format, addMinutes, parse, isAfter, isSameDay, parseISO, startOfDay } from 'date-fns';
 import { ru } from 'date-fns/locale';

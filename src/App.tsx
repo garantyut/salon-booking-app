@@ -4,7 +4,7 @@ import { init as initTelegramSDK, viewport, miniApp, backButton } from '@telegra
 import { useBookingStore } from '@/store/bookingStore';
 import { client, getImageUrl } from './lib/directus';
 import { readItems } from '@directus/sdk';
-import { getAdminTelegramIds, getUserProfile, saveUserProfile } from '@/services/firebaseService';
+import { getAdminTelegramIds, getUserProfile, saveUserProfile } from '@/services/directusService';
 import { ServiceList } from '@/components/ServiceList';
 import { MasterList } from '@/components/MasterList';
 import { BookingCalendar } from '@/components/BookingCalendar';
@@ -261,8 +261,8 @@ function InnerApp() {
                 return appointment;
             });
 
-            // Persist to Real Backend (or LocalStorage in Dev via service)
-            const { addAppointment } = await import('@/services/firebaseService');
+            // Persist to Backend via Directus
+            const { addAppointment } = await import('@/services/directusService');
 
             const savedAppointments: import('@/types').Appointment[] = [];
 

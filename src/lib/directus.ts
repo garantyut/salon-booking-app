@@ -1,6 +1,6 @@
 import { createDirectus, rest, readItems } from '@directus/sdk';
 
-const DIRECTUS_URL = 'https://cms.yuranvpn.ru';
+const DIRECTUS_URL = 'https://db.yuranvpn.ru';
 
 // Типы для коллекций Directus
 interface DirectusService {
@@ -12,8 +12,39 @@ interface DirectusService {
     category: string;
 }
 
+interface DirectusUser {
+    id: number;
+    telegram_id: string;
+    first_name: string;
+    last_name: string;
+    phone: string;
+    date_created: string;
+}
+
+interface DirectusAppointment {
+    id: number;
+    client_id: string;
+    service_id: string;
+    master_id: string | null;
+    date: string;
+    time_slot: string;
+    status: string;
+    notes: string | null;
+    price: number;
+    date_created: string;
+}
+
+interface DirectusSetting {
+    id: number;
+    key: string;
+    value: any;
+}
+
 interface DirectusSchema {
     services: DirectusService[];
+    users: DirectusUser[];
+    appointments: DirectusAppointment[];
+    settings: DirectusSetting[];
 }
 
 // Клиент для подключения

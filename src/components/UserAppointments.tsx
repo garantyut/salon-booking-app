@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useSalon } from '@/contexts/SalonContext';
 import { useBookingStore } from '@/store/bookingStore';
-import { getUserAppointments } from '@/services/firebaseService';
+import { getUserAppointments } from '@/services/directusService';
 import { MOCK_SERVICES } from '@/services/mockData';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Clock, Scissors, Pencil, Trash2, AlertCircle } from 'lucide-react';

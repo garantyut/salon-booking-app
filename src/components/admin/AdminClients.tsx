@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useBookingStore } from '@/store/bookingStore';
-import { getUsers } from '@/services/firebaseService';
+import { getUsers } from '@/services/directusService';
 import { Phone, User, CalendarDays, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
