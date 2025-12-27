@@ -75,15 +75,28 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
 
 export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
     try {
+        console.log('Saving user profile:', profile);
+
+        // Validate required fields
+        if (!profile.id) {
+            throw new Error('User ID (telegram_id) is required');
+        }
+        if (!profile.firstName) {
+            throw new Error('First name is required');
+        }
+
         // Check if user exists
         const existing = await getUserProfile(profile.id);
+        console.log('Existing user:', existing);
 
         const userData = {
             telegram_id: profile.id,
             first_name: profile.firstName,
-            last_name: profile.lastName || '',
+            last_name: profile.lastName || 'Не указано', // Directus may require this
             phone: profile.phone || ''
         };
+
+        console.log('Sending to Directus:', userData);
 
         if (existing) {
             // Update existing user - find by telegram_id first
@@ -95,14 +108,22 @@ export const saveUserProfile = async (profile: UserProfile): Promise<void> => {
             );
             if ((users as any[]).length > 0) {
                 const directusId = (users as any[])[0].id;
+                console.log('Updating user with Directus ID:', directusId);
                 await client.request(updateItem('users', directusId, userData));
             }
         } else {
             // Create new user
-            await client.request(createItem('users', userData));
+            console.log('Creating new user');
+            const result = await client.request(createItem('users', userData));
+            console.log('User created:', result);
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error saving user profile:', error);
+        // Provide more detailed error message
+        if (error?.errors) {
+            console.error('Directus errors:', JSON.stringify(error.errors, null, 2));
+            throw new Error(error.errors[0]?.message || 'Ошибка Directus');
+        }
         throw error;
     }
 };
