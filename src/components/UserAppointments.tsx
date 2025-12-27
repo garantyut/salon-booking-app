@@ -42,8 +42,7 @@ export const UserAppointments = ({ onReschedule, userId }: UserAppointmentsProps
     const getService = (id: string) => MOCK_SERVICES.find(s => s.id === id);
     // const getMaster = (id: string) => MOCK_MASTERS.find(m => m.id === id);
 
-    const now = new Date('2025-12-15'); // Simulating current date to match mock data context
-    // In real app use: const now = new Date();
+    const now = new Date(); // Use real current date
 
     const upcoming = appointments
         .filter(a => new Date(a.date) >= now)

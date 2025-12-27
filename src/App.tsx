@@ -134,16 +134,25 @@ function InnerApp() {
                         }
 
                         // Request fullscreen after a small delay (required for some Telegram versions)
+                        // Fullscreen requires Telegram 7.10+ on mobile
                         setTimeout(async () => {
                             try {
+                                // Try to request fullscreen (hides URL bar and header)
                                 if (viewport.requestFullscreen.isAvailable()) {
                                     await viewport.requestFullscreen();
                                     console.log('Fullscreen mode activated');
+                                } else {
+                                    console.warn('Fullscreen not available. Telegram version may be too old (need 7.10+)');
+                                }
+
+                                // Disable vertical swipes for better UX
+                                if ((miniApp as any).disableVerticalSwipes?.isAvailable?.()) {
+                                    (miniApp as any).disableVerticalSwipes();
                                 }
                             } catch (fsErr) {
                                 console.warn('Fullscreen request failed:', fsErr);
                             }
-                        }, 300);
+                        }, 500);
 
                     } catch (sdkErr) {
                         console.warn('New SDK initialization failed:', sdkErr);
